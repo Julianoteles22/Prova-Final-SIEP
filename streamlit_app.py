@@ -9,11 +9,9 @@ import pickle
 from sklearn.decomposition import PCA
 
 st.set_page_config(layout="wide")
-
-# Título
 st.title("Dashboard Interativo – Análise de Risco de Crédito")
 
-# Carregar modelo
+# Carregar modelos e dados
 with open('modelo.pkl', 'rb') as f:
     modelo = pickle.load(f)
 
@@ -23,62 +21,70 @@ with open('scaler.pkl', 'rb') as f:
 with open('explainer.pkl', 'rb') as f:
     explainer = pickle.load(f)
 
-# Carregar base automaticamente
 df = pd.read_csv("df_encoded.csv")
 st.success("Base de dados carregada automaticamente.")
 
-# Aplicar transformação
+# Transformação e predição
 X = df.drop(['class', 'cluster', 'outlier'], axis=1)
 X_scaled = scaler.transform(X)
 y_pred = modelo.predict(X_scaled)
-y_proba = modelo.predict_proba(X_scaled)[:,1]
+y_proba = modelo.predict_proba(X_scaled)[:, 1]
 
 df['Probabilidade (good)'] = y_proba
 df['Predição'] = np.where(y_pred == 1, 'good', 'bad')
 
 # Filtros
 st.sidebar.subheader("Filtros de Cliente")
-col1, col2 = st.sidebar.columns(2)
 risco = st.sidebar.selectbox("Classe prevista", ["Todos", "good", "bad"])
 df_filtrado = df.copy()
 X_filtrado = X.copy()
 X_scaled_filtrado = X_scaled.copy()
 
 if risco != "Todos":
-    df_filtrado = df[df['Predição'] == risco]
-    X_filtrado = X.loc[df_filtrado.index]
-    X_scaled_filtrado = X_scaled[df_filtrado.index]
+    idxs = df[df['Predição'] == risco].index
+    df_filtrado = df.loc[idxs]
+    X_filtrado = X.loc[idxs]
+    X_scaled_filtrado = X_scaled[idxs]
 
 st.dataframe(df_filtrado.head(20), use_container_width=True)
 
-# Seleção de cliente para SHAP
+# Visualização SHAP
 st.subheader("Visualização SHAP para um cliente")
 idx = st.selectbox("Selecione o índice do cliente", df_filtrado.index)
 
 shap_values = explainer.shap_values(X_scaled)
 
+if isinstance(shap_values, list):
+    shap_values_instance = shap_values[1][idx]
+    expected_value = explainer.expected_value[1]
+else:
+    shap_values_instance = shap_values[idx]
+    expected_value = explainer.expected_value
+
 st.write(f"Cliente selecionado: índice {idx}")
 st.write("Waterfall plot (SHAP):")
 
-shap_exp = shap.Explanation(
-    values=shap_values[1][idx],
-    base_values=explainer.expected_value[1],
-    data=X.iloc[idx],
-    feature_names=X.columns
+fig, ax = plt.subplots(figsize=(10, 4))
+shap.waterfall_plot(
+    shap.Explanation(
+        values=shap_values_instance,
+        base_values=expected_value,
+        data=X.iloc[idx],
+        feature_names=X.columns
+    ),
+    max_display=10, show=False
 )
-
-fig = shap.plots._waterfall.waterfall_legacy(shap_exp, show=False)
 st.pyplot(fig)
 
-# Visualização: clusterização com PCA
+# PCA Clusters
 st.subheader("Visualização de Clusters e Outliers (PCA)")
 pca = PCA(n_components=2)
 pca_result = pca.fit_transform(X_scaled)
 
-df['PCA1'] = pca_result[:,0]
-df['PCA2'] = pca_result[:,1]
+df['PCA1'] = pca_result[:, 0]
+df['PCA2'] = pca_result[:, 1]
 
-fig2 = plt.figure(figsize=(10,6))
+fig2 = plt.figure(figsize=(10, 6))
 sns.scatterplot(data=df, x='PCA1', y='PCA2', hue='cluster', style='outlier', palette='Set2')
 plt.title("Clusterização e Outliers")
 st.pyplot(fig2)
