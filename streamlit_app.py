@@ -48,14 +48,13 @@ st.subheader("Visualização SHAP para um cliente")
 idx = st.selectbox("Selecione o índice do cliente", df_filtrado.index)
 st.write(f"Cliente selecionado: índice {idx}")
 
-shap_values = explainer.shap_values(X_scaled)
-shap_exp = shap.Explanation(values=shap_values[:, :, 1][idx],
-                            base_values=explainer.expected_value[1],
-                            data=X.iloc[idx])
+# SHAP para o cliente selecionado
+shap_values_instance = explainer.shap_values(X_scaled[idx:idx+1])
 
 st.write("Gráfico de Contribuição (SHAP Bar Plot):")
-fig_shap = shap.plots.bar(shap_exp, show=False)
-st.pyplot(fig_shap)
+st.set_option('deprecation.showPyplotGlobalUse', False)
+shap.summary_plot(shap_values_instance, features=X.iloc[idx:idx+1], plot_type="bar")
+st.pyplot(bbox_inches='tight')
 
 # Visualização de Clusters com PCA
 st.subheader("Visualização de Clusters e Outliers (PCA)")
