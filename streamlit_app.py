@@ -54,12 +54,16 @@ shap_values = explainer.shap_values(X_scaled)
 st.write(f"Cliente selecionado: índice {idx}")
 st.write("Waterfall plot (SHAP):")
 
-fig = shap.plots._waterfall.waterfall_legacy(
-    shap.Explanation(values=shap_values[:, :, 1][idx],
-                     base_values=explainer.expected_value[1],
-                     data=X.iloc[idx]),
-    show=False
+# Criar o objeto Explanation corretamente para o cliente selecionado
+shap_exp = shap.Explanation(
+    values=shap_values[:, :, 1][idx],
+    base_values=explainer.expected_value[1],
+    data=X.iloc[idx],
+    feature_names=X.columns
 )
+
+fig, ax = plt.subplots(figsize=(10, 5))
+shap.plots.waterfall(shap_exp, show=False)
 st.pyplot(fig)
 
 # Visualização: clusterização com PCA
