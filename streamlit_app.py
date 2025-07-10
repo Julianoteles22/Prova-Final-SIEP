@@ -13,11 +13,8 @@ st.set_page_config(layout="wide")
 # Título
 st.title("Dashboard Interativo – Análise de Risco de Crédito")
 
-# Upload do CSV
-uploaded_file = st.file_uploader("Faça o upload da base de dados (.csv)", type="csv")
-
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+df = pd.read_csv("df_encoded.csv")
+st.success("Base de dados carregada automaticamente.")
 
     # Carregar modelos
     with open('modelo.pkl', 'rb') as f:
