@@ -13,18 +13,21 @@ st.set_page_config(layout="wide")
 # Título
 st.title("Dashboard Interativo – Análise de Risco de Crédito")
 
+
+# Carregar modelo
+with open('modelo.pkl', 'rb') as f:
+    modelo = pickle.load(f)
+
+with open('scaler.pkl', 'rb') as f:
+    scaler = pickle.load(f)
+
+with open('explainer.pkl', 'rb') as f:
+    explainer = pickle.load(f)
+
+# Carregar base automaticamente
 df = pd.read_csv("df_encoded.csv")
 st.success("Base de dados carregada automaticamente.")
 
-    # Carregar modelos
-    with open('modelo.pkl', 'rb') as f:
-        modelo = pickle.load(f)
-    with open('scaler.pkl', 'rb') as f:
-        scaler = pickle.load(f)
-    with open('explainer.pkl', 'rb') as f:
-        explainer = pickle.load(f)
-
-    st.success("Base e modelo carregados com sucesso!")
 
     # Aplicar transformação
     X = df.drop(['class', 'cluster', 'outlier'], axis=1)
